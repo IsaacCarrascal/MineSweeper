@@ -87,7 +87,8 @@ public:
 class Board{
 public:
     int TilesPerSide, bombs, TotalTiles, videores, openedTiles = 0;
-    Board(int TilesPerSide, int bombs) {
+    Board(int aux, int bombs) {
+        TilesPerSide = aux;
         int counter = 0, bombAssigner = 0;
         videores = TilesPerSide * 50;
         TotalTiles = TilesPerSide * TilesPerSide;
@@ -103,7 +104,6 @@ public:
                 if (bombAssigner < bombs) {
                     if (counter == AssignedBombs[bombAssigner]) {
                         TileBoard[counter].hasBomb = true;
-                        std::cout << counter << " " << TileBoard[counter].hasBomb << " " << AssignedBombs[bombAssigner] << std::endl;
                         bombAssigner++;
                     }
                 }
@@ -119,6 +119,26 @@ public:
 
 
     }
+    void Flusher(int TileNumber, std::vector<Tile>& TileBoard) {
+        int TotalTiles = TilesPerSide * TilesPerSide;
+        for (int i = std::max(TileBoard[TileNumber].column - 1, 0); i < std::min(TileBoard[TileNumber].column + 2, TilesPerSide); i++) {
+            for (int j = std::max(TileBoard[TileNumber].row - 1, 0); j < std::min(TileBoard[TileNumber].row + 2, TilesPerSide); j++) {
+                // Skip the current tile (no bomb around itself)
+                if (i == TileBoard[TileNumber].column && j == TileBoard[TileNumber].row) {
+                    continue;
+                }
+                // Check if neighbor is within the board and has a bomb
+                int neighborIndex = j * TilesPerSide + i;
+                if (TileBoard[neighborIndex].isClosed) {
+                    TileBoard[neighborIndex].clicked();
+                if (neighborIndex >= 0 && neighborIndex < TileBoard.size() && TileBoard[neighborIndex].BombsAround==0)
+                        Flusher(neighborIndex, TileBoard);
+                }
+            }
+        }
+    }
+
+
 
     void drawTiles(std::vector<Tile> TileBoard, int bombs) {
         sf::RenderWindow window(sf::VideoMode(videores, videores), "Buscaminas :)");
@@ -151,55 +171,58 @@ public:
                 sf::Event event;
                 while (window.pollEvent(event))
                 {
-                localPosition = sf::Mouse::getPosition(window);
-                mouseX = localPosition.x / 50;
-                mouseY = localPosition.y / 50;
-                if (localPosition.x < videores && localPosition.x>0) {
-                    if (localPosition.y < videores && localPosition.y>0) {
-                        for (int i = 0; i < TotalTiles; i++) {
-                            if (mouseY == TileBoard[i].row && mouseX == TileBoard[i].column) {
-                                TileBoard[i].isHighlighted();
-                                TileUnderMouse = i;
-                            }
-                            else {
-                                TileBoard[i].isNotHighlighted();
+                    localPosition = sf::Mouse::getPosition(window);
+                    mouseX = localPosition.x / 50;
+                    mouseY = localPosition.y / 50;
+                    if (localPosition.x < videores && localPosition.x>0) {
+                        if (localPosition.y < videores && localPosition.y>0) {
+                            for (int i = 0; i < TotalTiles; i++) {
+                                if (mouseY == TileBoard[i].row && mouseX == TileBoard[i].column) {
+                                    TileBoard[i].isHighlighted();
+                                    TileUnderMouse = i;
+                                }
+                                else {
+                                    TileBoard[i].isNotHighlighted();
+                                }
                             }
                         }
                     }
-                }
 
-                if (event.type == sf::Event::MouseButtonPressed)
-                {
-                    if (event.mouseButton.button == sf::Mouse::Right && TileBoard[TileUnderMouse].isClosed)
+                    if (event.type == sf::Event::MouseButtonPressed)
                     {
-                        TileBoard[TileUnderMouse].isFlagged = !TileBoard[TileUnderMouse].isFlagged;
-                        TileBoard[TileUnderMouse].flag();
-                    }
-                    if (event.mouseButton.button == sf::Mouse::Left) {
-                        if (!TileBoard[TileUnderMouse].isFlagged) {
-                            if (!TileBoard[TileUnderMouse].hasBomb) {
-                                if(TileBoard[TileUnderMouse].isClosed)
-                                openedTiles++;
-                                std::cout << openedTiles <<" "<< (TotalTiles - bombs) << std::endl;
+                        if (event.mouseButton.button == sf::Mouse::Right && TileBoard[TileUnderMouse].isClosed)
+                        {
+                            TileBoard[TileUnderMouse].isFlagged = !TileBoard[TileUnderMouse].isFlagged;
+                            TileBoard[TileUnderMouse].flag();
+                        }
+                        if (event.mouseButton.button == sf::Mouse::Left) {
+                            if (!TileBoard[TileUnderMouse].isFlagged) {
+                                TileBoard[TileUnderMouse].clicked();
+                                if (TileBoard[TileUnderMouse].BombsAround == 0 && !TileBoard[TileUnderMouse].hasBomb)
+                                    Flusher(TileUnderMouse, TileBoard);
+                                openedTiles = 0;
+                                for (int i = 0; i < TotalTiles; i++) {
+                                    if (!TileBoard[i].isClosed && !TileBoard[i].hasBomb)
+                                        openedTiles++;
 
-
-                            }
-                            TileBoard[TileUnderMouse].clicked();
-                            if (openedTiles == (TotalTiles - bombs)) {
-                                Game = false;
+                                }
+                                if (openedTiles == (TotalTiles - bombs)) {
+                                    Game = false;
+                                }
                             }
                         }
                     }
-                }
 
-                if (event.type == sf::Event::Closed)
-                    window.close();
+                    if (event.type == sf::Event::Closed) {
+                        window.close();
+                        Game = false;
+                    }
                 }
 
                 window.clear();
                 for (int i = 0; i < (TotalTiles); i++) {
                     window.draw(TileBoard[i].Square);
-                    if (TileBoard[i].isClosed == false) {
+                    if (TileBoard[i].isClosed == false && TileBoard[i].BombsAround>0) {
                         window.draw(texts[i]);
                     }
                 }
