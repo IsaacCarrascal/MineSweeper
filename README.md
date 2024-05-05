@@ -1,1 +1,1 @@
-No flushea pero si jala xd
+Ya flushea y ya jala :)
