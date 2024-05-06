@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
-#include <sstream>
+#include <chrono>
 
 bool Game = true;
 class Tile {
@@ -13,11 +13,11 @@ public:
     sf::RectangleShape Square;
     sf::Text Number;
     sf::Text* Text;
-    bool hasBomb=false;
-    bool isClosed=true, isFlagged=false;
-    int BombsAround=0, posx, posy, row, column;
+    bool hasBomb = false;
+    bool isClosed = true, isFlagged = false;
+    int BombsAround = 0, posx, posy, row, column;
 
-    
+
 
     void TileDesign() {
         Tilep = new sf::RectangleShape(sf::Vector2f(48, 48));
@@ -28,18 +28,18 @@ public:
         Tilep->setOutlineThickness(2);
         Tilep->setOutlineColor(sf::Color::Black);
         Square = *Tilep;
-    }  
+    }
 
     void isHighlighted() {
-        if(isClosed&&isFlagged==false)
-        Square.setFillColor(sf::Color::Green);
+        if (isClosed && isFlagged == false)
+            Square.setFillColor(sf::Color::Green);
     }
     void isNotHighlighted() {
-        if(isClosed&&isFlagged==false)
-        Square.setFillColor(sf::Color::Blue);
+        if (isClosed && isFlagged == false)
+            Square.setFillColor(sf::Color::Blue);
     }
     void flag() {
-            if(isFlagged)
+        if (isFlagged)
             Square.setFillColor(sf::Color::Yellow);
 
     }
@@ -52,7 +52,7 @@ public:
         else {
             Square.setFillColor(sf::Color::White);
         }
-        
+
     }
     void clicked() {
         isClosed = false;
@@ -76,7 +76,7 @@ public:
             }
         }
     }
- 
+
 
 
 
@@ -84,10 +84,12 @@ public:
 
 };
 
-class Board{
+class Board {
 public:
-    int TilesPerSide, bombs, TotalTiles, videores, openedTiles = 0;
-    Board(int TilesPerSide, int bombs) {
+    int TilesPerSide, bombs, TotalTiles, videores, openedTiles = 0, flags;
+    Board(int aux, int bombs) {
+        TilesPerSide = aux;
+        flags = bombs;
         int counter = 0, bombAssigner = 0;
         videores = TilesPerSide * 50;
         TotalTiles = TilesPerSide * TilesPerSide;
@@ -103,7 +105,6 @@ public:
                 if (bombAssigner < bombs) {
                     if (counter == AssignedBombs[bombAssigner]) {
                         TileBoard[counter].hasBomb = true;
-                        std::cout << counter << " " << TileBoard[counter].hasBomb << " " << AssignedBombs[bombAssigner] << std::endl;
                         bombAssigner++;
                     }
                 }
@@ -119,9 +120,30 @@ public:
 
 
     }
+    void Flusher(int TileNumber, std::vector<Tile>& TileBoard) {
+        int TotalTiles = TilesPerSide * TilesPerSide;
+        for (int i = std::max(TileBoard[TileNumber].column - 1, 0); i < std::min(TileBoard[TileNumber].column + 2, TilesPerSide); i++) {
+            for (int j = std::max(TileBoard[TileNumber].row - 1, 0); j < std::min(TileBoard[TileNumber].row + 2, TilesPerSide); j++) {
+                // Skip the current tile (no bomb around itself)
+                if (i == TileBoard[TileNumber].column && j == TileBoard[TileNumber].row) {
+                    continue;
+                }
+                // Check if neighbor is within the board and has a bomb
+                int neighborIndex = j * TilesPerSide + i;
+                if (TileBoard[neighborIndex].isClosed) {
+                    TileBoard[neighborIndex].clicked();
+                    if (neighborIndex >= 0 && neighborIndex < TileBoard.size() && TileBoard[neighborIndex].BombsAround == 0)
+                        Flusher(neighborIndex, TileBoard);
+                }
+            }
+        }
+    }
+
+
 
     void drawTiles(std::vector<Tile> TileBoard, int bombs) {
-        sf::RenderWindow window(sf::VideoMode(videores, videores), "Buscaminas :)");
+        sf::RenderWindow window(sf::VideoMode(videores, videores+50), "Buscaminas :)");
+        window.setFramerateLimit(60);
         sf::Mouse::setPosition(sf::Vector2i(10, 50), window);
         sf::Vector2i localPosition;
         int TileUnderMouse = 0, mouseX, mouseY;
@@ -131,78 +153,129 @@ public:
         }
         int numTexts = TotalTiles;
         int fontSize = 30;
-        sf::Color textColor = sf::Color::Black;
-        std::vector<sf::Text> texts;
+        sf::Color textColor(sf::Color::Black), textColor1(33, 53, 166), textColor2(7, 133, 3), textColor3(250, 37, 37), textColor4(158, 3, 19);
 
-        // Generate text objects and store them in the vector
+        std::vector<sf::Text> texts;
         for (int i = 0; i < numTexts; ++i) {
             std::string message = std::to_string(TileBoard[i].BombsAround);
             sf::Text text(message, font, fontSize);
-            text.setFillColor(textColor);
-            text.setPosition(TileBoard[i].posx + 20, TileBoard[i].posy + 10);
+            switch (TileBoard[i].BombsAround) {
+            case 1: {
+                text.setFillColor(textColor1);
+                break;
+            }
+            case 2: {
+                text.setFillColor(textColor2);
+                break;
+            }
+            case 3: {
+                text.setFillColor(textColor3);
+                break;
+            }
+            default: {
+                text.setFillColor(textColor4);
+                break;
+            }
+
+            }
+            text.setPosition(TileBoard[i].posx + 15, TileBoard[i].posy + 7);
             texts.push_back(text);
         }
 
-        // Variable to control which text to print (0 to numTexts-1)
+        sf::RectangleShape bar(sf::Vector2f(videores, 50));
+        sf::Color Gray(192, 192, 192);
+        bar.setPosition(0, videores);
+        bar.setFillColor(Gray);
+        sf::Text flagCount("Bombs left: " + std::to_string(flags), font, fontSize);
+        flagCount.setFillColor(textColor);
+        flagCount.setPosition(5, videores+7);
+        sf::Text timeText;
+        timeText.setFont(font);
+        timeText.setCharacterSize(30);
+        timeText.setPosition(videores - 100, videores + 7);
+        timeText.setFillColor(sf::Color::Black);
+        sf::Clock clock;
+
 
         while (window.isOpen())
         {
             while (Game) {
                 sf::Event event;
+                sf::Time elapsedTime = clock.getElapsedTime();
+                int minutes = elapsedTime.asSeconds() / 60;
+                int seconds = static_cast<int>(elapsedTime.asSeconds()) % 60;
+                timeText.setString(std::to_string(minutes) + ":" + std::to_string(seconds));
+                window.draw(timeText);
                 while (window.pollEvent(event))
                 {
-                localPosition = sf::Mouse::getPosition(window);
-                mouseX = localPosition.x / 50;
-                mouseY = localPosition.y / 50;
-                if (localPosition.x < videores && localPosition.x>0) {
-                    if (localPosition.y < videores && localPosition.y>0) {
-                        for (int i = 0; i < TotalTiles; i++) {
-                            if (mouseY == TileBoard[i].row && mouseX == TileBoard[i].column) {
-                                TileBoard[i].isHighlighted();
-                                TileUnderMouse = i;
-                            }
-                            else {
-                                TileBoard[i].isNotHighlighted();
+                    timeText.setString(std::to_string(minutes)+":"+std::to_string(seconds));
+                    localPosition = sf::Mouse::getPosition(window);
+                    mouseX = localPosition.x / 50;
+                    mouseY = localPosition.y / 50;
+                    window.draw(timeText);
+                    if (localPosition.x < videores && localPosition.x>0) {
+                        if (localPosition.y < videores && localPosition.y>0) {
+                            for (int i = 0; i < TotalTiles; i++) {
+                                if (mouseY == TileBoard[i].row && mouseX == TileBoard[i].column) {
+                                    TileBoard[i].isHighlighted();
+                                    TileUnderMouse = i;
+                                }
+                                else {
+                                    TileBoard[i].isNotHighlighted();
+                                }
                             }
                         }
                     }
-                }
 
-                if (event.type == sf::Event::MouseButtonPressed)
-                {
-                    if (event.mouseButton.button == sf::Mouse::Right && TileBoard[TileUnderMouse].isClosed)
+                    if (event.type == sf::Event::MouseButtonPressed)
                     {
-                        TileBoard[TileUnderMouse].isFlagged = !TileBoard[TileUnderMouse].isFlagged;
-                        TileBoard[TileUnderMouse].flag();
-                    }
-                    if (event.mouseButton.button == sf::Mouse::Left) {
-                        if (!TileBoard[TileUnderMouse].isFlagged) {
-                            if (!TileBoard[TileUnderMouse].hasBomb) {
-                                if(TileBoard[TileUnderMouse].isClosed)
-                                openedTiles++;
-                                std::cout << openedTiles <<" "<< (TotalTiles - bombs) << std::endl;
-
-
+                        if (event.mouseButton.button == sf::Mouse::Right && TileBoard[TileUnderMouse].isClosed)
+                        {
+                            if (flags > 0 || TileBoard[TileUnderMouse].isFlagged) {
+                                TileBoard[TileUnderMouse].isFlagged = !TileBoard[TileUnderMouse].isFlagged;
+                                TileBoard[TileUnderMouse].flag();
+                                if (TileBoard[TileUnderMouse].isFlagged) {
+                                    flags--;
+                                }
+                                else { flags++; }
+                                flagCount.setString("Bombs left: " + std::to_string(flags));
                             }
-                            TileBoard[TileUnderMouse].clicked();
-                            if (openedTiles == (TotalTiles - bombs)) {
-                                Game = false;
+
+                        }
+                        if (event.mouseButton.button == sf::Mouse::Left) {
+                            if (!TileBoard[TileUnderMouse].isFlagged) {
+                                TileBoard[TileUnderMouse].clicked();
+                                if (TileBoard[TileUnderMouse].BombsAround == 0 && !TileBoard[TileUnderMouse].hasBomb)
+                                    Flusher(TileUnderMouse, TileBoard);
+                                openedTiles = 0;
+                                for (int i = 0; i < TotalTiles; i++) {
+                                    if (!TileBoard[i].isClosed && !TileBoard[i].hasBomb)
+                                        openedTiles++;
+
+                                }
+                                if (openedTiles == (TotalTiles - bombs)) {
+                                    Game = false;
+                                }
                             }
                         }
                     }
-                }
 
-                if (event.type == sf::Event::Closed)
-                    window.close();
+                    if (event.type == sf::Event::Closed) {
+                        window.close();
+                        Game = false;
+                    }
                 }
 
                 window.clear();
                 for (int i = 0; i < (TotalTiles); i++) {
                     window.draw(TileBoard[i].Square);
-                    if (TileBoard[i].isClosed == false) {
+                    if (TileBoard[i].isClosed == false && TileBoard[i].BombsAround > 0 && !TileBoard[i].hasBomb) {
                         window.draw(texts[i]);
                     }
                 }
+                window.draw(bar);
+                window.draw(flagCount);
+                window.draw(timeText);
                 window.display();
 
             }
@@ -219,17 +292,17 @@ public:
             }
         }
 
-}
+    }
 
 
 
 
     void AssignBombs(int TotalTiles, int bombs, std::vector<int>& AssignedBombs) {
- 
+
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, TotalTiles-1);
- 
+        std::uniform_int_distribution<> dis(0, TotalTiles - 1);
+
         for (int i = 0; i < bombs; i++) {
             int random_number;
             do {
@@ -244,9 +317,21 @@ public:
     }
 };
 
-class Menu{
+class Menu {
 public:
     int choice;
+   static int getValidInt() {
+        int number;
+
+        while (!(std::cin >> number)) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return 0;
+        }
+
+        return number;
+    }
+
     static void run() {
         int choice = 0;
         while (choice != 4) {
@@ -257,18 +342,18 @@ public:
             std::cout << "2.- Nivel Intermedio\n";
             std::cout << "3.- Nivel experto\n";
             std::cout << "4.- Salir\n";
-            std::cin >> choice;
+            choice = getValidInt();
             switch (choice) {
             case 1: {
-                Board easy(9, 9);
+                Board easy(8, 6);
                 break;
             }
             case 2: {
-                Board medium(16, 40);
+                Board medium(13, 21);
                 break;
             }
             case 3: {
-                Board hard(20, 80);
+                Board hard(18, 50);
                 break;
             }
             case 4:
@@ -276,6 +361,7 @@ public:
                 break;
             default:
                 std::cout << "Opcion no valida\n";
+                system("pause");
                 break;
             }
         }
@@ -287,8 +373,7 @@ public:
 int main()
 {
     Menu::run();
-   
+
 
     return 0;
 }
-
