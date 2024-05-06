@@ -1,0 +1,16 @@
+﻿  SFML_TEST.cpp
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(26,34): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(26,28): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(180,72): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(180,48): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(184,45): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(184,45): warning C4244:         with
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(184,45): warning C4244:         [
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(184,45): warning C4244:             T=float
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(184,45): warning C4244:         ]
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(186,28): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(190,42): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(194,55): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(194,39): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\SFML_TEST\SFML_TEST.cpp(204,29): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
+  SFML_TEST.vcxproj -> C:\Users\Isaac\Documents\School\S2\POO\SFML_TEST\x64\Debug\SFML_TEST.exe
